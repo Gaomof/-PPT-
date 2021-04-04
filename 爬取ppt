@@ -1,0 +1,53 @@
+import requests
+from lxml import etree
+import os
+
+if __name__ == "__main__":
+    if not os.path.exists('D:/PPT模板爬取'):
+        os.mkdir('D:/PPT模板爬取')
+    url = 'http://www.1ppt.com/moban/jianjie/'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
+
+    }
+    detail1url = []  # 详情页链接集合
+    downlurl = []  # 下载页链接集合
+    durl = []  # 下载链接集合
+    # 获取主页面源码
+    page_text = requests.get(url=url, headers=headers).text
+
+    # 分析主页面源码，获取详情页链接位置
+    tree = etree.HTML(page_text)
+    all_list_li = tree.xpath('//body/div[5]/dl/dd/ul/li/a')
+
+    # 提取详情页链接
+    for li in all_list_li:
+        detail_url = li.xpath('./@href')[0]
+        detail_url = 'http://www.1ppt.com/' + detail_url
+        detail1url.append(detail_url)
+
+    # 分析并提取下载页面链接
+    for url in detail1url:
+        detailpage_text = requests.get(url=url, headers=headers).text
+        tree1 = etree.HTML(detailpage_text)
+        downloadpage = tree1.xpath('/html/body/div[4]/div[1]/dl/dd/ul[1]/li/a/@href')
+        for zzz in downloadpage:
+            dpageurl = 'http://www.1ppt.com' + zzz
+            downlurl.append(dpageurl)
+
+    # 分析并提取下载链接
+    for aaa in downlurl:
+        documents_text = requests.get(url=aaa, headers=headers).text
+        tree2 = etree.HTML(documents_text)
+        downloadpage11 = tree2.xpath('/html/body/dl/dd/ul[2]/li[1]/a/@href')
+        for qqq in downloadpage11:
+            durl.append(qqq)
+
+    # 下载文件并存储在本地
+    for abc in durl:
+        abc_name = abc.split('/')[-1]
+        abc_data = requests.get(url=abc, headers=headers).content
+        abc_path = 'D:/PPT模板爬取/' + abc_name
+        with open(abc_path, 'wb') as fp:
+            fp.write(abc_data)
+            print(abc_name, '下载成功！！！')
